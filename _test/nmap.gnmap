@@ -1,0 +1,4 @@
+# Nmap 7.92 scan initiated Tue Aug  9 09:32:54 2022 as: nmap -Pn -p- -sV -oA nmap 127.0.0.1
+Host: 127.0.0.1 (test.local)	Status: Up
+Host: 127.0.0.1 (test.local)	Ports: 8080/open/tcp//http-proxy//Burp Suite Professional http proxy/, 8181/open/tcp//http//Golang net|http server (Go-IPFS json-rpc or InfluxDB API)/, 8443/open/tcp//ssl|http//Golang net|http server (Go-IPFS json-rpc or InfluxDB API)/, 33485/open/tcp/////, 41777/open/tcp/////	Ignored State: closed (65530)
+# Nmap done at Tue Aug  9 09:35:05 2022 -- 1 IP address (1 host up) scanned in 131.00 seconds
