@@ -14,7 +14,6 @@ import (
 	"time"
 
 	nmap2 "github.com/Ullaakut/nmap/v3"
-	// "github.com/redt1de/pnmap/nmap"
 	"github.com/spf13/cobra"
 )
 

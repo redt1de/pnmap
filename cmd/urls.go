@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -13,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/redt1de/pnmap/nmap"
+	nmap "github.com/Ullaakut/nmap/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -48,13 +47,9 @@ func urls(args []string) {
 			fmt.Println(err)
 		}
 		for _, f := range matches {
-			content, err := os.ReadFile(f)
-			if err != nil {
-				log.Fatal("Failed to read file:", err)
-				continue
-			}
 
-			nRun, err := nmap.Parse(content)
+			nRun := nmap.Run{}
+			err := nRun.FromFile(f)
 			if err != nil {
 				log.Fatal("Failed to parse XML:", err)
 				continue
@@ -68,10 +63,10 @@ func urls(args []string) {
 						if strings.Contains(chk, "https") || strings.Contains(chk, "ssl") || strings.Contains(chk, "tls") || strings.Contains(chk, "tls") {
 							scheme = "https://"
 						}
-						out = append(out, scheme+hst.Addresses[0].Addr+":"+strconv.Itoa(p.PortId))
+						out = append(out, scheme+hst.Addresses[0].Addr+":"+strconv.Itoa(int(p.ID)))
 
 						for _, hn := range hst.Hostnames {
-							out = append(out, scheme+hn.Name+":"+strconv.Itoa(p.PortId))
+							out = append(out, scheme+hn.Name+":"+strconv.Itoa(int(p.ID)))
 						}
 
 						if *extraDNS != "" {
@@ -90,7 +85,7 @@ func urls(args []string) {
 								}
 								doms := tmp[1]
 								for _, dom := range strings.Split(doms, ",") {
-									out = append(out, scheme+dom+":"+strconv.Itoa(p.PortId))
+									out = append(out, scheme+dom+":"+strconv.Itoa(int(p.ID)))
 								}
 
 							}

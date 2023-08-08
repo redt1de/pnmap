@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/redt1de/pnmap/nmap"
+	nmap "github.com/Ullaakut/nmap/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -46,21 +46,17 @@ func group(args []string) {
 			fmt.Println(err)
 		}
 		for _, f := range matches {
-			content, err := os.ReadFile(f)
-			if err != nil {
-				log.Fatal("Failed to read file:", err)
-				continue
-			}
 
-			nRun, err := nmap.Parse(content)
+			nRun := nmap.Run{}
+			err := nRun.FromFile(f)
 			if err != nil {
 				log.Fatal("Failed to parse XML:", err)
 				continue
 			}
 			for _, hst := range nRun.Hosts {
 				for _, prt := range hst.Ports {
-					serviceMap[prt.Service.Name] = append(serviceMap[prt.Service.Name], hst.Addresses[0].Addr+":"+strconv.Itoa(prt.PortId))
-					portnumMap[prt.PortId] = append(portnumMap[prt.PortId], hst.Addresses[0].Addr+":"+strconv.Itoa(prt.PortId))
+					serviceMap[prt.Service.Name] = append(serviceMap[prt.Service.Name], hst.Addresses[0].Addr+":"+strconv.Itoa(int(prt.ID)))
+					portnumMap[int(prt.ID)] = append(portnumMap[int(prt.ID)], hst.Addresses[0].Addr+":"+strconv.Itoa(int(prt.ID)))
 				}
 			}
 

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redt1de/pnmap/nmap"
+	nmap "github.com/Ullaakut/nmap/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -20,19 +20,19 @@ type hostMap map[string]nmap.Host
 
 var hostmap hostMap
 
-type fileslice []string
+// type fileslice []string
 
-// var daFiles fileslice
+// // var daFiles fileslice
 
-func (i *fileslice) String() string {
-	return fmt.Sprintf("%d", *i)
-}
-func (i *fileslice) Set(value string) error {
-	*i = append(*i, value)
-	return nil
-}
+// func (i *fileslice) String() string {
+// 	return fmt.Sprintf("%d", *i)
+// }
+// func (i *fileslice) Set(value string) error {
+// 	*i = append(*i, value)
+// 	return nil
+// }
 
-var infiles *[]string
+// var infiles *[]string
 var outfile *string
 var onlyhosts *string
 var hasports *bool
@@ -50,7 +50,6 @@ var combineCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(combineCmd)
-
 	outfile = combineCmd.Flags().StringP("out", "o", "nmap-combined.xml", "output file")
 	onlyhosts = combineCmd.Flags().StringP("only-hosts", "O", "", "specify a file containing IPs, and only include those in the new XML")
 	hasports = combineCmd.Flags().BoolP("has-ports", "p", false, "exclude hosts with no ports open, handy for -Pn scans.")
@@ -67,7 +66,7 @@ func combine(args []string) {
 	//
 	// HasPorts = *hasports
 	hostmap = make(hostMap)
-	final := nmap.NmapRun{}
+	final := nmap.Run{}
 	final.Verbose.Level = 0
 	final.Debugging.Level = 0
 	var tmpArgs []string
@@ -80,13 +79,9 @@ func combine(args []string) {
 		}
 		for _, f := range matches {
 			fmt.Println("[+] parsing", f)
-			content, err := os.ReadFile(f)
-			if err != nil {
-				log.Fatal("Failed to read file:", err)
-				continue
-			}
 
-			nRun, err := nmap.Parse(content)
+			nRun := nmap.Run{}
+			err := nRun.FromFile(f)
 			if err != nil {
 				log.Fatal("Failed to parse XML:(", f, ") ", err)
 				continue
@@ -125,13 +120,13 @@ func combine(args []string) {
 			final.Targets = append(final.Targets, nRun.Targets...)
 
 			// elapsed time is combined from all scans
-			elapsed += nRun.RunStats.Finished.Elapsed
+			elapsed += nRun.Stats.Finished.Elapsed
 
 			// end time is the last time from all scans
-			tl := timeLater(nRun.RunStats.Finished.Time, final.RunStats.Finished.Time)
-			if tl == nRun.RunStats.Finished.Time {
-				final.RunStats.Finished.Time = nRun.RunStats.Finished.Time
-				final.RunStats.Finished.TimeStr = nRun.RunStats.Finished.TimeStr
+			tl := timeLater(nRun.Stats.Finished.Time, final.Stats.Finished.Time)
+			if tl == nRun.Stats.Finished.Time {
+				final.Stats.Finished.Time = nRun.Stats.Finished.Time
+				final.Stats.Finished.TimeStr = nRun.Stats.Finished.TimeStr
 			}
 
 			for _, hst := range nRun.Hosts {
@@ -175,9 +170,9 @@ func combine(args []string) {
 		final.Hosts = append(final.Hosts, hostmap[k])
 	}
 
-	final.RunStats.Finished.Elapsed = elapsed
-	final.RunStats.Finished.Summary = "Parsed by brads nmap tool"
-	final.RunStats.Finished.Exit = "success"
+	final.Stats.Finished.Elapsed = elapsed
+	final.Stats.Finished.Summary = "Parsed by brads nmap tool"
+	final.Stats.Finished.Exit = "success"
 
 	// args are all combined so there is a record of each command run
 	final.Args = strings.Join(tmpArgs, " /-/ ")
@@ -198,17 +193,21 @@ func combine(args []string) {
 		total++
 	}
 
-	final.RunStats.Hosts.Up = up
-	final.RunStats.Hosts.Down = down
-	final.RunStats.Hosts.Total = total
+	final.Stats.Hosts.Up = up
+	final.Stats.Hosts.Down = down
+	final.Stats.Hosts.Total = total
 
-	fmt.Println("[+]", final.RunStats.Hosts.Up, "included in the new XML.")
+	final.Args = strings.Join(os.Args, " ")
+	// final.StartStr = time.Now().Format("Mon Jan 2 15:04:05 2006")
+
+	fmt.Println("[+]", final.Stats.Hosts.Up, "included in the new XML.")
 
 	// pencil whip the xml header
 	out := []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE nmaprun>
 <?xml-stylesheet href="file:///usr/share/nmap/nmap.xsl" type="text/xsl"?>
 <!-- Nmap scan results, parsed by brads tool -->
+
 `)
 
 	// marshall xml using +++++ as indent which is then stripped out, otherwise ingest doesnt like the format.
@@ -229,8 +228,8 @@ func combine(args []string) {
 }
 
 func GetOnlyHosts(hostmap hostMap, onlyfile string) hostMap {
-	var ret hostMap
-	ret = make(hostMap)
+
+	ret := make(hostMap)
 	file, err := os.Open(onlyfile)
 	if err != nil {
 		log.Fatal(err)
